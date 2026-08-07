@@ -234,23 +234,6 @@ h2{font-size:20px;font-weight:600;margin:6px 0 3px}
 <script>if(typeof jsQR!=="function"){document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></scr'+'ipt>');}</script>
 <script src="embaralho.js"></script>
 <script>
-"use strict";
-/* ═════════ 1. LAYOUT (idêntico a cartao_omr.py) ═════════ */
-const W_=164, H_=52;
-const LAY = {
-  aspect: W_/H_,
-  bubble_r: 2.6/W_,
-  qr:{x0:4/W_, y0:11/H_, x1:34/W_, y1:41/H_},
-  options:["A","B","C","D","E"],
-  bubbles:(()=>{ const b={}, dx=9/W_, r=[12,21,30,39,48];
-    [[56,[1,2,3,4,5]],[114,[6,7,8,9,10]]].forEach(([x0,qs])=>
-      qs.forEach((q,i)=>{ b[q]=[0,1,2,3,4].map(k=>[(x0/W_)+k*dx, r[i]/H_]); }));
-    return b; })()
-};
-const NQ = 10, NO = LAY.options.length;
-const IDX = Array.from({length:NO},(_,i)=>i);
-</script>
-<script>
 
 "use strict";
 /* ═══════════════════════════════════════════════════════════════════
@@ -591,9 +574,20 @@ function parar(){
 }
 function faixa(t,s,al){ $("#ftit").textContent=t; $("#fsub").textContent=s;
   $("#dot").style.background=al?"var(--coral)":(travado?"var(--mint)":"var(--amber)"); }
-function laco(){ if(!rodando) return;
-  if(video.readyState>=2 && !travado) processar();
-  setTimeout(()=>requestAnimationFrame(laco),70); }
+let falhas=0;
+function laco(){
+  if(!rodando) return;
+  try{
+    if(video.readyState>=2 && !travado) processar();
+    falhas=0;
+  }catch(err){                       // um quadro ruim não pode parar a leitura
+    console.error("quadro descartado:",err);
+    if(++falhas===8){
+      faixa("Erro na leitura","Recarregue a página; se persistir, confira se embaralho.js foi enviado",true);
+    }
+  }
+  setTimeout(()=>requestAnimationFrame(laco),70);
+}
 function processar(){
   const vw=video.videoWidth, vh=video.videoHeight; if(!vw) return;
   const alvo=Math.min(1100,vw);
@@ -977,6 +971,19 @@ function irPara(v){
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>irPara(b.dataset.v));
 $("#bIniciar").onclick=iniciar; $("#bParar").onclick=parar;
 
+(function conferirPecas(){
+  const faltando=[];
+  if(typeof jsQR!=="function") faltando.push("jsqr.js");
+  if(typeof embaralharProva!=="function") faltando.push("embaralho.js");
+  if(typeof fiduciais!=="function") faltando.push("núcleo de leitura");
+  if(faltando.length){
+    const d=document.createElement("div");
+    d.className="aviso";
+    d.style.cssText="position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top));z-index:99";
+    d.textContent="Faltou carregar: "+faltando.join(", ")+". Envie todos os arquivos para o GitHub e recarregue.";
+    document.body.appendChild(d);
+  }
+})();
 refletirProva(); pintarResultados(); pintarDesempenho(); montarManual();
 faixa("Toque em iniciar câmera", E.alunos.length?E.alunos.length+" cartões salvos"
   :"O QR do cartão traz aluno e gabarito");
