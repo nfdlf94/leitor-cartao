@@ -1,0 +1,435 @@
+{
+ "id": "3ANO-AV2",
+ "gabaritoCanonico": "BDDACDCCDC",
+ "habilidades": [
+  "Representação de conjuntos",
+  "Representação de conjuntos",
+  "Subconjuntos",
+  "Operações entre conjuntos",
+  "Diagramas e cardinalidade",
+  "Diagramas e cardinalidade",
+  "Volume de sólidos",
+  "Volume de sólidos",
+  "Volume de sólidos",
+  "Volume e conversão de unidades"
+ ],
+ "enunciados": [
+  "Considere o conjunto A = {x | x é número natural e 2 < x < 9}. Escrevendo o conjunto…",
+  "O conjunto D é formado por todos os números naturais que são divisores de 36. A quantidade…",
+  "Considere o conjunto M = {a, b, c, d, e}. O número de subconjuntos de M é…",
+  "Dados os conjuntos A = {1, 2, 3, 4, 5, 6} e B = {4, 5, 6, 7, 8}, o conjunto A - B é…",
+  "Em um escritório com 40 funcionários, 25 tomam café, 20 tomam chá e 3 não tomam nenhuma de…",
+  "Uma pesquisa ouviu 80 pessoas sobre o que preferem fazer no fim de semana. Entre elas, 38 …",
+  "Um copo tem formato cilíndrico, com 12 cm de altura e 8 cm de diâmetro interno. Considere …",
+  "Um parque aquático possui um tobogã em formato de cone. A base do tobogã tem raio de 3 m e…",
+  "Um planetário será construído em formato de esfera com raio de 10 m. Considere π = 3. O vo…",
+  "Uma caixa d'água em formato de paralelepípedo retângulo mede 4 m de comprimento, 2,5 m de …"
+ ],
+ "alunos": [
+  {
+   "nome": "ADRIELLY BEATRIZ FERREIRA SANTOS",
+   "turma": "3A",
+   "numero": "01"
+  },
+  {
+   "nome": "ALICE VITÓRIA DOS SANTOS FREITAS",
+   "turma": "3A",
+   "numero": "02"
+  },
+  {
+   "nome": "AMANDA DE MOURA LEMOS JESÚS",
+   "turma": "3A",
+   "numero": "03"
+  },
+  {
+   "nome": "AMANDA PRIMITIVA MARTINS DO NASCIMENTO",
+   "turma": "3A",
+   "numero": "04"
+  },
+  {
+   "nome": "ANDERSON GUILHERME DE SANTANA SILVA",
+   "turma": "3A",
+   "numero": "05"
+  },
+  {
+   "nome": "ARTHUR GABRIEL CAVALCANTI DE LIMA",
+   "turma": "3A",
+   "numero": "06"
+  },
+  {
+   "nome": "BEATRIZ DE SANTANA SOUZA",
+   "turma": "3A",
+   "numero": "07"
+  },
+  {
+   "nome": "BRUNA LORENA LOPES ALMEIDA",
+   "turma": "3A",
+   "numero": "08"
+  },
+  {
+   "nome": "CLARA LÍVIA PEREIRA DE LIMA",
+   "turma": "3A",
+   "numero": "09"
+  },
+  {
+   "nome": "CLARISSA VITÓRIA NOBERTO DA SILVA",
+   "turma": "3A",
+   "numero": "10"
+  },
+  {
+   "nome": "DANILO OLIVEIRA SANTOS DA SILVA",
+   "turma": "3A",
+   "numero": "11"
+  },
+  {
+   "nome": "DÉBORA LUAYNE DA SILVA SOARES",
+   "turma": "3A",
+   "numero": "12"
+  },
+  {
+   "nome": "DIOGO PEREIRA PROFIRIO DA SILVA",
+   "turma": "3A",
+   "numero": "13"
+  },
+  {
+   "nome": "ÉMERSON LUIZ SILVA DOS SANTOS",
+   "turma": "3A",
+   "numero": "14"
+  },
+  {
+   "nome": "EMERSON PINHEIRO DE MELO",
+   "turma": "3A",
+   "numero": "15"
+  },
+  {
+   "nome": "EWELLYN ALLYCE MARIA DA SILVA",
+   "turma": "3A",
+   "numero": "16"
+  },
+  {
+   "nome": "FLÁVIA BEATRIZ DA SILVA XAVIER",
+   "turma": "3A",
+   "numero": "17"
+  },
+  {
+   "nome": "FLÁVIO ROBERT DA SILVA",
+   "turma": "3A",
+   "numero": "18"
+  },
+  {
+   "nome": "GILMARK OLIVEIRA LIMA",
+   "turma": "3A",
+   "numero": "19"
+  },
+  {
+   "nome": "GISLAYNE SILMARA AMARO OLIVEIRA",
+   "turma": "3A",
+   "numero": "20"
+  },
+  {
+   "nome": "ISABELLY DE SOUZA BRITO",
+   "turma": "3A",
+   "numero": "21"
+  },
+  {
+   "nome": "JAMILLY VITÓRIA BARBOSA",
+   "turma": "3A",
+   "numero": "22"
+  },
+  {
+   "nome": "JOÃO VITOR TEIXEIRA DE LIMA",
+   "turma": "3A",
+   "numero": "23"
+  },
+  {
+   "nome": "KAMILLY EMMANUELE MELO DE LIMA",
+   "turma": "3A",
+   "numero": "24"
+  },
+  {
+   "nome": "KAUÃ TAYLON LOPES DE LIMA",
+   "turma": "3A",
+   "numero": "25"
+  },
+  {
+   "nome": "KAUÃ VINÍCIUS DOS SANTOS NOGUEIRA",
+   "turma": "3A",
+   "numero": "26"
+  },
+  {
+   "nome": "KÊNIA VITÓRIA SANTOS LIMA",
+   "turma": "3A",
+   "numero": "27"
+  },
+  {
+   "nome": "KÉTYLLEN VICTÓRYA QUEIROZ DE FREITAS",
+   "turma": "3A",
+   "numero": "28"
+  },
+  {
+   "nome": "LIEBERT LUAN MARTINS PEREIRA",
+   "turma": "3A",
+   "numero": "29"
+  },
+  {
+   "nome": "LUÍS GUILHERME SOARES SANTOS",
+   "turma": "3A",
+   "numero": "30"
+  },
+  {
+   "nome": "LUIZ AUGUSTO MARCELINO LOPES LEITE",
+   "turma": "3A",
+   "numero": "31"
+  },
+  {
+   "nome": "MARIA CLARA DOS SANTOS MÉLO",
+   "turma": "3A",
+   "numero": "32"
+  },
+  {
+   "nome": "MARIA EDUARDA SILVA BEZERRA",
+   "turma": "3A",
+   "numero": "33"
+  },
+  {
+   "nome": "MARIA ELOISA DE ALMEIDA XAVIER",
+   "turma": "3A",
+   "numero": "34"
+  },
+  {
+   "nome": "MARIA VITÓRYA FERREIRA CARVALHO RIBEIRO",
+   "turma": "3A",
+   "numero": "35"
+  },
+  {
+   "nome": "MATHEUS EDUARDO BELO DOS SANTOS LAUREANO",
+   "turma": "3A",
+   "numero": "36"
+  },
+  {
+   "nome": "RAQUELLY VICENTE DA SILVA",
+   "turma": "3A",
+   "numero": "37"
+  },
+  {
+   "nome": "SILVIO OLIVEIRA PEREIRA DA SILVA",
+   "turma": "3A",
+   "numero": "38"
+  },
+  {
+   "nome": "THALYSON MAURICIO SILVA ARAUJO",
+   "turma": "3A",
+   "numero": "39"
+  },
+  {
+   "nome": "ALLAN DO NASCIMENTO BENTO FERREIRA",
+   "turma": "3B",
+   "numero": "01"
+  },
+  {
+   "nome": "AMANDA BEATRIZ DOS SANTOS SILVA",
+   "turma": "3B",
+   "numero": "02"
+  },
+  {
+   "nome": "ARTHUR MANOEL LINS DA SILVA",
+   "turma": "3B",
+   "numero": "03"
+  },
+  {
+   "nome": "CARLA MARIA DE SOUZA",
+   "turma": "3B",
+   "numero": "04"
+  },
+  {
+   "nome": "EDUARDO KAWÊ CORREIA LIRA",
+   "turma": "3B",
+   "numero": "05"
+  },
+  {
+   "nome": "EMANUELA CECÍLIA DE OLIVEIRA SOUSA",
+   "turma": "3B",
+   "numero": "06"
+  },
+  {
+   "nome": "ERIK NATANAEL ESTEVAM SILVA",
+   "turma": "3B",
+   "numero": "07"
+  },
+  {
+   "nome": "ÉVELLYN ALVES DA SILVA",
+   "turma": "3B",
+   "numero": "08"
+  },
+  {
+   "nome": "FELIPE GABRIEL CIEBA DOS SANTOS",
+   "turma": "3B",
+   "numero": "09"
+  },
+  {
+   "nome": "FELIPE GABRIEL SILVA DO NASCIMENTO",
+   "turma": "3B",
+   "numero": "10"
+  },
+  {
+   "nome": "GABRYELLA KELLEN DA SILVA",
+   "turma": "3B",
+   "numero": "11"
+  },
+  {
+   "nome": "GEOVANNA GABRIELLY DE MELO BORGES",
+   "turma": "3B",
+   "numero": "12"
+  },
+  {
+   "nome": "GISELLY DA SILVA GOMES",
+   "turma": "3B",
+   "numero": "13"
+  },
+  {
+   "nome": "GRENDHA DE LIMA MORAES SILVA",
+   "turma": "3B",
+   "numero": "14"
+  },
+  {
+   "nome": "JOANNA CLARA DOS SANTOS",
+   "turma": "3B",
+   "numero": "15"
+  },
+  {
+   "nome": "JOÃO GABRIEL DE MELO FARIAS",
+   "turma": "3B",
+   "numero": "16"
+  },
+  {
+   "nome": "JOÃO VITOR FRANCISCO DE OLIVEIRA",
+   "turma": "3B",
+   "numero": "17"
+  },
+  {
+   "nome": "JOÁS DA LUZ SILVA",
+   "turma": "3B",
+   "numero": "18"
+  },
+  {
+   "nome": "JOSÉ CLEBSON DA SILVA COSTA",
+   "turma": "3B",
+   "numero": "19"
+  },
+  {
+   "nome": "JOSÉ MARCOS DE SOUZA SANTOS FILHO",
+   "turma": "3B",
+   "numero": "20"
+  },
+  {
+   "nome": "JOYNE GABRIELLE DA SILVA ALBUQUERQUE",
+   "turma": "3B",
+   "numero": "21"
+  },
+  {
+   "nome": "KALLYNI RUANY LIMA DA SILVA",
+   "turma": "3B",
+   "numero": "22"
+  },
+  {
+   "nome": "KAWANY JENNYFER CÂNDIDO DA SILVA OLIVEIRA",
+   "turma": "3B",
+   "numero": "23"
+  },
+  {
+   "nome": "KAYO FÁBIO ALVES DE BARROS",
+   "turma": "3B",
+   "numero": "24"
+  },
+  {
+   "nome": "KEVELLYN LETYCIA DE SANTANA GALDINO",
+   "turma": "3B",
+   "numero": "25"
+  },
+  {
+   "nome": "LAURA FERNANDA SOUZA DOS SANTOS",
+   "turma": "3B",
+   "numero": "26"
+  },
+  {
+   "nome": "LAVÍNYA VITÓRIA NASCIMENTO DA SILVA",
+   "turma": "3B",
+   "numero": "27"
+  },
+  {
+   "nome": "MARIA GABRIELA DA SILVA BARBOSA",
+   "turma": "3B",
+   "numero": "28"
+  },
+  {
+   "nome": "MARIA HELOÍSA GOMES SILVA",
+   "turma": "3B",
+   "numero": "29"
+  },
+  {
+   "nome": "MICHELSON ROBERTO SILVA SANTANA",
+   "turma": "3B",
+   "numero": "30"
+  },
+  {
+   "nome": "MIKAELLY NAYANE SOUZA DA SILVA",
+   "turma": "3B",
+   "numero": "31"
+  },
+  {
+   "nome": "PEDRO HENRIQUE DA SILVA",
+   "turma": "3B",
+   "numero": "32"
+  },
+  {
+   "nome": "RAPHAEL SWÊDYSON SILVA MAGALHÃES",
+   "turma": "3B",
+   "numero": "33"
+  },
+  {
+   "nome": "RENATA DA SILVA SANTOS",
+   "turma": "3B",
+   "numero": "34"
+  },
+  {
+   "nome": "SUÉLLY NAYARA RODOVAL DE SOUZA",
+   "turma": "3B",
+   "numero": "35"
+  },
+  {
+   "nome": "THAYNÁ CONCEIÇÃO DA SILVA",
+   "turma": "3B",
+   "numero": "36"
+  },
+  {
+   "nome": "THAYS STEFFANY DE OLIVEIRA SILVA",
+   "turma": "3B",
+   "numero": "37"
+  },
+  {
+   "nome": "TÚLIO FELIPE CAMPOS FERREIRA",
+   "turma": "3B",
+   "numero": "38"
+  },
+  {
+   "nome": "ULYSSES SANTOS LIMA",
+   "turma": "3B",
+   "numero": "39"
+  },
+  {
+   "nome": "VICTOR EMANUEL MACÊDO DOS SANTOS",
+   "turma": "3B",
+   "numero": "40"
+  },
+  {
+   "nome": "VINÍCIUS MIGUEL COSTA DE LIRA",
+   "turma": "3B",
+   "numero": "41"
+  },
+  {
+   "nome": "WÉDSON HENRIQUE DE MELO SILVA",
+   "turma": "3B",
+   "numero": "42"
+  }
+ ]
+}
