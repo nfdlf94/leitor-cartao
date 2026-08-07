@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#071324">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Leitor de Cartão · Desbugando a Matemática</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#071324; --navy:#0E2145; --slate:#17294A; --line:#243B64;
+  --orange:#F97316; --amber:#FBBF24; --mint:#34D399; --coral:#FB5A5A;
+  --paper:#F2F4F8; --mute:#7E93B8;
+  --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--paper);font-family:var(--sans);
+  font-size:15px;line-height:1.45;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--paper);background:var(--navy);
+  border:1px solid var(--line);border-radius:10px;padding:11px 13px;width:100%}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--orange);outline-offset:1px;border-color:transparent}
+:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+
+/* ---------- estrutura ---------- */
+#app{display:flex;flex-direction:column;height:100dvh}
+#views{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;overflow-y:auto;display:none;
+  padding:14px 14px calc(18px + env(safe-area-inset-bottom))}
+.view.on{display:block}
+#v-ler{padding:0;overflow:hidden}
+
+nav{display:flex;background:var(--navy);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);flex:0 0 auto}
+nav button{flex:1;padding:11px 4px 13px;display:flex;flex-direction:column;
+  align-items:center;gap:3px;color:var(--mute);font-size:10.5px;
+  letter-spacing:.09em;text-transform:uppercase;font-weight:600;
+  border-top:2px solid transparent;margin-top:-1px;transition:color .15s}
+nav button.on{color:var(--orange);border-top-color:var(--orange)}
+nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+nav .pill{position:absolute;transform:translate(15px,-4px);background:var(--orange);
+  color:var(--ink);font-family:var(--mono);font-size:9px;font-weight:700;
+  min-width:15px;padding:1px 4px;border-radius:8px;line-height:1.35}
+
+/* ---------- câmera ---------- */
+#palco{position:absolute;inset:0;background:#000;overflow:hidden}
+#video,#over{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+#video{object-fit:cover;width:100%;height:100%}
+#over{width:100%;height:100%}
+#faixa{position:absolute;top:0;left:0;right:0;padding:calc(10px + env(safe-area-inset-top)) 14px 22px;
+  background:linear-gradient(#071324f2,#07132400);display:flex;gap:11px;align-items:flex-start}
+#faixa .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);
+  margin-top:6px;flex:0 0 auto;box-shadow:0 0 0 0 currentColor;animation:pulso 1.6s infinite}
+@keyframes pulso{0%{box-shadow:0 0 0 0 #fbbf2466}70%{box-shadow:0 0 0 9px #fbbf2400}100%{box-shadow:0 0 0 0 #fbbf2400}}
+#faixa .t{font-weight:600;font-size:14.5px;line-height:1.3}
+#faixa .s{color:var(--mute);font-size:12px;font-family:var(--mono);margin-top:2px}
+
+/* grade viva — o elemento-assinatura */
+#grade{position:absolute;right:11px;bottom:96px;background:#071324e0;
+  border:1px solid var(--line);border-radius:13px;padding:9px 8px;
+  backdrop-filter:blur(7px);display:grid;grid-template-columns:auto repeat(5,14px);
+  gap:3px;font-family:var(--mono);font-size:9.5px;align-items:center}
+#grade .h{color:var(--mute);text-align:center;font-size:8.5px;letter-spacing:.04em}
+#grade .q{color:var(--mute);font-size:9px;padding-right:3px;text-align:right}
+#grade i{width:14px;height:11px;border-radius:3px;background:#1b3055;display:block}
+#grade i.on{background:var(--orange)}
+#grade i.lk{background:var(--mint)}
+
+#rodape{position:absolute;left:0;right:0;bottom:0;padding:14px;
+  background:linear-gradient(#07132400,#071324f2 40%)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:15px;border-radius:13px;font-weight:600;font-size:15.5px;
+  background:var(--orange);color:#231000;transition:transform .1s,opacity .15s}
+.btn:active{transform:scale(.98)}
+.btn.sec{background:var(--slate);color:var(--paper);border:1px solid var(--line)}
+.btn.gho{background:none;color:var(--mute);border:1px solid var(--line)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.linha{display:flex;gap:9px}
+
+/* ---------- painel de conferência ---------- */
+#painel{position:absolute;inset:0;background:var(--ink);z-index:20;display:none;
+  flex-direction:column;padding:0 14px calc(14px + env(safe-area-inset-bottom));overflow-y:auto}
+#painel.on{display:flex}
+#nota{display:flex;align-items:baseline;gap:11px;padding:20px 0 8px}
+#nota b{font-family:var(--mono);font-size:54px;font-weight:600;line-height:.9;letter-spacing:-.04em}
+#nota span{color:var(--mute);font-family:var(--mono);font-size:13px}
+.rot{color:var(--mute);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+  font-weight:600;margin:22px 0 9px}
+#conf{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:7px}
+.qc{background:var(--navy);border:1px solid var(--line);border-radius:11px;
+  padding:8px 5px 9px;text-align:center;transition:border-color .15s}
+.qc .n{font-family:var(--mono);font-size:9.5px;color:var(--mute)}
+.qc .a{font-family:var(--mono);font-size:23px;font-weight:600;line-height:1.15}
+.qc .g{font-family:var(--mono);font-size:9.5px;color:var(--mute)}
+.qc.ok{border-color:#34d39955}.qc.ok .a{color:var(--mint)}
+.qc.no{border-color:#fb5a5a55}.qc.no .a{color:var(--coral)}
+.qc.vz .a{color:var(--mute)}
+
+/* ---------- listas e tabelas ---------- */
+.card{background:var(--navy);border:1px solid var(--line);border-radius:15px;
+  padding:14px;margin-bottom:11px}
+.card h3{margin:0 0 4px;font-size:15px;font-weight:600}
+.card p{margin:0;color:var(--mute);font-size:12.5px}
+label{display:block;color:var(--mute);font-size:10.5px;letter-spacing:.11em;
+  text-transform:uppercase;font-weight:600;margin:13px 0 6px}
+.mono{font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase}
+h2{font-size:20px;font-weight:600;margin:6px 0 3px;letter-spacing:-.01em}
+.sub{color:var(--mute);font-size:12.5px;margin:0 0 16px}
+
+.aluno{display:flex;align-items:center;gap:11px;padding:11px 12px;
+  background:var(--navy);border:1px solid var(--line);border-radius:12px;margin-bottom:7px}
+.aluno .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.aluno .rs{font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:.1em}
+.aluno .nt{font-family:var(--mono);font-size:19px;font-weight:600}
+.aluno .x{color:var(--mute);padding:5px;font-size:17px;line-height:1}
+
+.barra{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.barra .q{font-family:var(--mono);font-size:11px;color:var(--mute);width:24px;flex:0 0 auto}
+.barra .t{flex:1;height:19px;background:var(--slate);border-radius:5px;overflow:hidden}
+.barra .f{height:100%;background:var(--mint);border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.barra .f.baixo{background:var(--coral)}
+.barra .f.medio{background:var(--amber)}
+.barra .p{font-family:var(--mono);font-size:11px;width:36px;text-align:right;flex:0 0 auto}
+
+.vazio{text-align:center;padding:52px 22px;color:var(--mute)}
+.vazio b{display:block;color:var(--paper);font-size:16px;font-weight:600;margin-bottom:5px}
+.aviso{background:#f9731618;border:1px solid #f9731644;color:#FDBA74;
+  border-radius:11px;padding:10px 12px;font-size:12.5px;margin-bottom:11px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="views">
+
+    <!-- ============ LER ============ -->
+    <section id="v-ler" class="view on">
+      <div id="palco">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="over"></canvas>
+
+        <div id="faixa">
+          <span class="dot" id="dot"></span>
+          <div style="flex:1">
+            <div class="t" id="ftit">Toque em iniciar câmera</div>
+            <div class="s" id="fsub">Nenhuma prova carregada</div>
+          </div>
+        </div>
+
+        <div id="grade" hidden></div>
+
+        <div id="rodape">
+          <div class="linha" id="acoes">
+            <button class="btn" id="bIniciar">Iniciar câmera</button>
+          </div>
+          <div class="linha" id="acoes2" style="margin-top:9px;display:none">
+            <button class="btn gho" id="bFoto">Usar foto</button>
+            <button class="btn gho" id="bParar">Parar</button>
+          </div>
+          <input type="file" id="arq" accept="image/*" hidden>
+        </div>
+      </div>
+
+      <!-- painel de conferência -->
+      <div id="painel">
+        <div id="nota"><b id="ntv">0</b><span id="ntd">de 10</span></div>
+        <div class="aviso" id="avAmb" hidden></div>
+
+        <div class="rot">Conferir — toque para corrigir</div>
+        <div id="conf"></div>
+
+        <div class="rot">Aluno</div>
+        <div id="boxAluno"></div>
+        <select id="selAluno"></select>
+        <input id="nomeAluno" placeholder="ou digite o nome" style="margin-top:8px">
+
+        <div class="linha" style="margin-top:20px">
+          <button class="btn gho" id="bDescartar">Descartar</button>
+          <button class="btn" id="bSalvar">Salvar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROVA ============ -->
+    <section id="v-prova" class="view">
+      <h2>Prova</h2>
+      <p class="sub">Lido do QR automaticamente. Você também pode digitar.</p>
+
+      <label>Código da prova</label>
+      <input id="idProva" class="mono" placeholder="9A-EQ2">
+
+      <label>Gabarito — 10 letras (A–E)</label>
+      <input id="gabarito" class="mono" placeholder="BACDEABDCE" maxlength="10">
+      <p class="card" style="margin-top:9px;font-size:12px;color:var(--mute);background:none;border:0;padding:0">
+        Enquanto o gabarito estiver preenchido, o app corrige mesmo sem ler o QR de novo.</p>
+
+      <label>Habilidades por questão (opcional)</label>
+      <input id="habs" class="mono" placeholder="H04,H09,H09,H12,...">
+
+      <label>Turma — um aluno por linha</label>
+      <textarea id="turma" rows="7" placeholder="Ana Beatriz Silva&#10;Carlos Eduardo Lima&#10;..."></textarea>
+
+      <div class="linha" style="margin-top:16px">
+        <button class="btn sec" id="bLimparProva">Limpar prova</button>
+      </div>
+    </section>
+
+    <!-- ============ RESULTADOS ============ -->
+    <section id="v-res" class="view">
+      <h2>Resultados</h2>
+      <p class="sub" id="resSub">Nenhum cartão lido ainda.</p>
+      <div id="resumo"></div>
+      <div id="lista"></div>
+      <div id="itens"></div>
+      <div id="habsBox"></div>
+      <div class="linha" style="margin-top:18px" id="resAcoes" hidden>
+        <button class="btn sec" id="bCsv">Baixar CSV</button>
+        <button class="btn gho" id="bZerar">Apagar tudo</button>
+      </div>
+    </section>
+
+  </div>
+
+  <nav>
+    <button data-v="ler" class="on"><svg viewBox="0 0 24 24"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M7 12h10"/></svg>Ler</button>
+    <button data-v="prova"><svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M15 3v5h5M8.5 13.5l2 2 4.5-4.5"/></svg>Prova</button>
+    <button data-v="res"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Resultados<span class="pill" id="pill" hidden>0</span></button>
+  </nav>
+</div>
+
+<!-- leitor de QR local (funciona offline); CDN só como reserva -->
+<script src="jsqr.js"></script>
+<script>if(typeof jsQR!=="function"){document.write(
+  '<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></scr'+'ipt>');}</script>
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════
+   1. LAYOUT — deve ser idêntico ao de cartao_omr.py
+   ═══════════════════════════════════════════════════════════════════ */
+const W_=164, H_=52;
+const LAY = {
+  aspect: W_/H_,
+  bubble_r: 2.6/W_,
+  qr:{x0:4/W_, y0:11/H_, x1:34/W_, y1:41/H_},
+  options:["A","B","C","D","E"],
+  bubbles:(()=>{ const b={}, dx=9/W_, r=[12,21,30,39,48];
+    [[56,[1,2,3,4,5]],[114,[6,7,8,9,10]]].forEach(([x0,qs])=>
+      qs.forEach((q,i)=>{ b[q]=[0,1,2,3,4].map(k=>[(x0/W_)+k*dx, r[i]/H_]); }));
+    return b; })()
+};
+const NQ = 10, NO = LAY.options.length;
+const IDX = Array.from({length:NO},(_,i)=>i);
+
+/* ═══════════════════════════════════════════════════════════════════
+   2. VISÃO COMPUTACIONAL
+   ═══════════════════════════════════════════════════════════════════ */
+function cinza(img){                       // ImageData -> {g,w,h}
+  const {data,width:w,height:h}=img, g=new Uint8ClampedArray(w*h);
+  for(let i=0,p=0;i<g.length;i++,p+=4)
+    g[i]=(data[p]*77+data[p+1]*151+data[p+2]*28)>>8;
+  return {g,w,h};
+}
+function reduzir(s,alvo){                  // subamostragem por caixa
+  if(s.w<=alvo) return s;
+  const e=Math.ceil(s.w/alvo), w=(s.w/e)|0, h=(s.h/e)|0, g=new Uint8ClampedArray(w*h);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    let t=0; const y0=y*e,x0=x*e;
+    for(let j=0;j<e;j++){const r=(y0+j)*s.w; for(let i=0;i<e;i++) t+=s.g[r+x0+i];}
+    g[y*w+x]=t/(e*e);
+  }
+  return {g,w,h,esc:e};
+}
+function planificar(s){                    // corrige gradiente de luz
+  const {g,w,h}=s, I=new Float64Array((w+1)*(h+1));
+  for(let y=0;y<h;y++){let lin=0;
+    for(let x=0;x<w;x++){lin+=g[y*w+x]; I[(y+1)*(w+1)+x+1]=I[y*(w+1)+x+1]+lin;}}
+  const r=Math.max(2,Math.round(w*0.055)), o=new Uint8ClampedArray(w*h);
+  for(let y=0;y<h;y++){
+    const y0=Math.max(0,y-r), y1=Math.min(h,y+r+1);
+    for(let x=0;x<w;x++){
+      const x0=Math.max(0,x-r), x1=Math.min(w,x+r+1);
+      const som=I[y1*(w+1)+x1]-I[y0*(w+1)+x1]-I[y1*(w+1)+x0]+I[y0*(w+1)+x0];
+      const bg=som/((y1-y0)*(x1-x0))+1;
+      o[y*w+x]=Math.min(255,g[y*w+x]/bg*200);
+    }}
+  return {g:o,w,h};
+}
+function otsu(g){
+  const H=new Float64Array(256); for(let i=0;i<g.length;i++)H[g[i]]++;
+  let sm=0; for(let t=0;t<256;t++) sm+=t*H[t];
+  let wB=0,sB=0,best=-1,th=128;
+  for(let t=0;t<256;t++){ wB+=H[t]; if(!wB)continue;
+    const wF=g.length-wB; if(wF<=0)break; sB+=t*H[t];
+    const v=wF*wB*Math.pow(sB/wB-(sm-sB)/wF,2); if(v>best){best=v;th=t;} }
+  return th;
+}
+/* blobs escuros que são quadrados sólidos, com testes invariantes à rotação */
+function fiduciais(s){
+  const F=planificar(s), th=otsu(F.g)*0.92, {w,h}=F, N=w*h;
+  const vis=new Uint8Array(N), pil=new Int32Array(N), cands=[];
+  for(let p=0;p<N;p++){
+    if(vis[p]||F.g[p]>=th) continue;
+    let top=0; pil[top++]=p; vis[p]=1;
+    let n=0,sx=0,sy=0,sxx=0,sxy=0,syy=0;
+    while(top){
+      const q=pil[--top], x=q%w, y=(q/w)|0;
+      n++; sx+=x; sy+=y; sxx+=x*x; sxy+=x*y; syy+=y*y;
+      if(x>0   && !vis[q-1] && F.g[q-1]<th){vis[q-1]=1;pil[top++]=q-1;}
+      if(x<w-1 && !vis[q+1] && F.g[q+1]<th){vis[q+1]=1;pil[top++]=q+1;}
+      if(y>0   && !vis[q-w] && F.g[q-w]<th){vis[q-w]=1;pil[top++]=q-w;}
+      if(y<h-1 && !vis[q+w] && F.g[q+w]<th){vis[q+w]=1;pil[top++]=q+w;}
+    }
+    if(n<N*8e-4 || n>N*0.05) continue;
+    const mx=sx/n, my=sy/n;
+    const u20=sxx/n-mx*mx, u02=syy/n-my*my, u11=sxy/n-mx*my;
+    const tr=u20+u02, di=Math.hypot(u20-u02,2*u11);
+    const l1=(tr+di)/2, l2=(tr-di)/2;
+    if(l2<=1e-6) continue;
+    if(!(Math.sqrt(l1/l2)>0.72 && Math.sqrt(l1/l2)<1.38)) continue;   // isotrópico
+    const cheio=n/(12*Math.sqrt(l1*l2));                              // sólido ≈ 1
+    if(!(cheio>0.84 && cheio<1.22)) continue;
+    cands.push({x:mx,y:my,a:n});
+  }
+  if(cands.length<4) return null;
+  const amax=Math.max(...cands.map(c=>c.a));
+  let C=cands.filter(c=>c.a>=0.40*amax).sort((x,y)=>y.a-x.a).slice(0,8)
+             .map(c=>[c.x,c.y]);
+  if(C.length<4) return null;
+  if(C.length>4) C=melhorQuatro(C);
+  const q=orientar(C,F,th);
+  if(!q) return null;
+  const k=s.esc||1;
+  return q.map(p=>[p[0]*k,p[1]*k]);
+}
+const areaPoli=P=>{ let A=0;
+  for(let i=0;i<P.length;i++){const j=(i+1)%P.length; A+=P[i][0]*P[j][1]-P[j][0]*P[i][1];}
+  return Math.abs(A/2); };
+function ciclico(P){                      // ordem cíclica em volta do centroide
+  const cx=P.reduce((s,p)=>s+p[0],0)/P.length, cy=P.reduce((s,p)=>s+p[1],0)/P.length;
+  return P.slice().sort((a,b)=>Math.atan2(a[1]-cy,a[0]-cx)-Math.atan2(b[1]-cy,b[0]-cx));
+}
+function melhorQuatro(P){                 // os 4 que formam o maior quadrilátero
+  let best=null,ba=-1;
+  for(let a=0;a<P.length-3;a++) for(let b=a+1;b<P.length-2;b++)
+    for(let c=b+1;c<P.length-1;c++) for(let d=c+1;d<P.length;d++){
+      const q=ciclico([P[a],P[b],P[c],P[d]]), ar=areaPoli(q);
+      if(ar>ba){ba=ar;best=q;}
+    }
+  return best;
+}
+function convexo(q){
+  let sg=0;
+  for(let i=0;i<4;i++){
+    const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4];
+    const z=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);
+    if(z===0) continue; const g=Math.sign(z);
+    if(sg && g!==sg) return false; sg=g;
+  }
+  return true;
+}
+/* fração de pixels escuros na janela do QR, medida na imagem planificada:
+   ~0,45 na orientação correta e ~0,05 nas outras sete */
+function massaQR(F,th,q){
+  const W=600, H=W/LAY.aspect, Hm=homografia(q,W,H); if(!Hm) return 0;
+  const {g,w,h}=F; let esc=0,n=0;
+  for(let i=0;i<20;i++) for(let j=0;j<20;j++){
+    const u=(LAY.qr.x0+(LAY.qr.x1-LAY.qr.x0)*(i+0.5)/20)*W;
+    const v=(LAY.qr.y0+(LAY.qr.y1-LAY.qr.y0)*(j+0.5)/20)*H;
+    const p=proj(Hm,u,v), xi=Math.round(p[0]), yi=Math.round(p[1]); n++;
+    if(xi>=0&&yi>=0&&xi<w&&yi<h&&g[yi*w+xi]<th) esc++;
+  }
+  return esc/n;
+}
+/* testa as 8 orientações possíveis: filtra pela proporção, desempata pelo QR.
+   Não usa extremos — por isso tolera rotação forte sem inverter o cartão. */
+function orientar(P,F,th){
+  const ciclo=ciclico(P), dirs=[ciclo,ciclo.slice().reverse()];
+  let melhor=null, best=1e9;
+  for(const dir of dirs) for(let r=0;r<4;r++){
+    const q=[0,1,2,3].map(i=>dir[(i+r)%4]);
+    const d=(a,b)=>Math.hypot(q[a][0]-q[b][0],q[a][1]-q[b][1]);
+    const lg=(d(0,1)+d(3,2))/2, at=(d(0,3)+d(1,2))/2;
+    if(at<1e-6) continue;
+    const razao=(lg/at)/LAY.aspect;
+    if(!(razao>0.55 && razao<1.80)) continue;
+    if(!convexo(q)) continue;
+    const fr=massaQR(F,th,q);
+    if(fr<0.22) continue;
+    const custo=-fr*100+Math.abs(Math.log(razao))*40;
+    if(custo<best){ best=custo; melhor=q; }
+  }
+  if(!melhor) return null;
+  return areaPoli(melhor)>F.w*F.h*0.02 ? melhor : null;
+}
+/* homografia: retângulo (0,0)-(W,H) -> quadrilátero da foto */
+function homografia(q,W,H){
+  const s=[[0,0],[W,0],[W,H],[0,H]], A=[], b=[];
+  for(let i=0;i<4;i++){
+    const [u,v]=s[i], [x,y]=q[i];
+    A.push([u,v,1,0,0,0,-u*x,-v*x]); b.push(x);
+    A.push([0,0,0,u,v,1,-u*y,-v*y]); b.push(y);
+  }
+  for(let c=0;c<8;c++){                                 // eliminação de Gauss
+    let p=c; for(let r=c+1;r<8;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r;
+    [A[c],A[p]]=[A[p],A[c]]; [b[c],b[p]]=[b[p],b[c]];
+    if(Math.abs(A[c][c])<1e-12) return null;
+    for(let r=0;r<8;r++){ if(r===c) continue;
+      const f=A[r][c]/A[c][c];
+      for(let k=c;k<8;k++) A[r][k]-=f*A[c][k];
+      b[r]-=f*b[c];
+    }
+  }
+  const h=b.map((v,i)=>v/A[i][i]);
+  return [h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7],1];
+}
+const proj=(H,u,v)=>{ const d=H[6]*u+H[7]*v+1;
+  return [(H[0]*u+H[1]*v+H[2])/d,(H[3]*u+H[4]*v+H[5])/d]; };
+
+let DISCO=null, ANEL=null, RB=0;
+function amostras(rb){
+  if(RB===rb) return; RB=rb;
+  const ri=rb*0.60; DISCO=[];
+  for(let dy=-ri;dy<=ri;dy+=1.3) for(let dx=-ri;dx<=ri;dx+=1.3)
+    if(dx*dx+dy*dy<=ri*ri) DISCO.push([dx,dy]);
+  ANEL=[];
+  for(let i=0;i<32;i++){ const a=i/32*6.2832;
+    ANEL.push([Math.cos(a)*rb*1.30,Math.sin(a)*rb*1.30]);
+    ANEL.push([Math.cos(a)*rb*1.62,Math.sin(a)*rb*1.62]); }
+}
+function lerBolhas(src,quad){
+  const W=1000, H=W/LAY.aspect, Hm=homografia(quad,W,H);
+  if(!Hm) return null;
+  amostras(LAY.bubble_r*W);
+  const {g,w,h}=src;
+  const px=(x,y)=>{ const xi=Math.round(x),yi=Math.round(y);
+    return (xi<0||yi<0||xi>=w||yi>=h)?255:g[yi*w+xi]; };
+  const R=[], mark=[];
+  for(let q=1;q<=NQ;q++){
+    const fi=LAY.bubbles[q].map(([nx,ny])=>{
+      const u=nx*W, v=ny*H, an=[];
+      for(const [dx,dy] of ANEL){const p=proj(Hm,u+dx,v+dy); an.push(px(p[0],p[1]));}
+      an.sort((a,b)=>a-b);
+      const branco=an[an.length>>1], lim=Math.max(40,branco*0.66);
+      let d=0; for(const [dx,dy] of DISCO){const p=proj(Hm,u+dx,v+dy); if(px(p[0],p[1])<lim)d++;}
+      return d/DISCO.length;
+    });
+    const or=IDX.slice().sort((a,b)=>fi[b]-fi[a]);
+    const b1=fi[or[0]], b2=fi[or[1]];
+    if(b1<0.38){ R.push(null); mark.push("BRANCO"); }
+    else if(b2>0.55*b1 && b2>0.34){ R.push(null); mark.push("DUPLA"); }
+    else { R.push(LAY.options[or[0]]); mark.push("OK"); }
+  }
+  return {R,mark};
+}
+function lerQR(src,quad){
+  if(typeof jsQR!=="function") return null;
+  const W=1500, H=W/LAY.aspect, Hm=homografia(quad,W,H); if(!Hm) return null;
+  const pad=0.02, L=560;
+  const u0=(LAY.qr.x0-pad)*W, v0=(LAY.qr.y0-pad)*H;
+  const u1=(LAY.qr.x1+pad)*W, v1=(LAY.qr.y1+pad)*H;
+  const {g,w,h}=src, gr=new Uint8ClampedArray(L*L);
+  for(let j=0;j<L;j++){
+    const v=v0+(v1-v0)*j/(L-1);
+    for(let i=0;i<L;i++){
+      const p=proj(Hm,u0+(u1-u0)*i/(L-1),v);
+      const xi=Math.round(p[0]), yi=Math.round(p[1]);
+      gr[j*L+i]=(xi<0||yi<0||xi>=w||yi>=h)?255:g[yi*w+xi];
+    }}
+  let mn=255,mx=0;                                   // realce de contraste
+  for(const t of gr){ if(t<mn)mn=t; if(t>mx)mx=t; }
+  const dv=Math.max(1,mx-mn);
+  const out=new Uint8ClampedArray(L*L*4);
+  for(let i=0;i<L*L;i++){
+    const t=Math.max(0,Math.min(255,(gr[i]-mn)*255/dv)), o=i*4;
+    out[o]=out[o+1]=out[o+2]=t; out[o+3]=255;
+  }
+  try{ const r=jsQR(out,L,L,{inversionAttempts:"dontInvert"}); return r?r.data:null; }
+  catch(e){ return null; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3. ESTADO
+   ═══════════════════════════════════════════════════════════════════ */
+const guarda=(()=>{ let mem={},ok=false;
+  try{localStorage.setItem("_t","1");localStorage.removeItem("_t");ok=true;}catch(e){}
+  return {ler:k=>{try{return ok?localStorage.getItem(k):mem[k];}catch(e){return mem[k];}},
+          esc:(k,v)=>{try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}};})();
+
+const E = Object.assign({id:"",gab:"",habs:[],turma:[],alunos:[]},
+  JSON.parse(guarda.ler("dbm_omr")||"{}"));
+const salvar=()=>guarda.esc("dbm_omr",JSON.stringify(E));
+const $=s=>document.querySelector(s);
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. CÂMERA E LAÇO DE LEITURA
+   ═══════════════════════════════════════════════════════════════════ */
+const video=$("#video"), over=$("#over"), ctx=over.getContext("2d");
+const tmp=document.createElement("canvas"), tctx=tmp.getContext("2d",{willReadFrequently:true});
+let stream=null, rodando=false, hist=[], travado=null, ultimoQuad=null;
+let alunoQR=null, semQR=0;
+
+async function iniciar(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},
+      width:{ideal:1280},height:{ideal:960}},audio:false});
+  }catch(e){
+    faixa("Câmera indisponível","Toque em “Usar foto” para enviar uma imagem",true); 
+    $("#acoes2").style.display="flex"; return;
+  }
+  video.srcObject=stream; await video.play();
+  rodando=true; hist=[]; travado=null;
+  $("#acoes").innerHTML=""; $("#acoes2").style.display="flex"; $("#grade").hidden=false;
+  desenhaGrade(null,false);
+  laco();
+}
+function parar(){
+  rodando=false;
+  if(stream){stream.getTracks().forEach(t=>t.stop()); stream=null;}
+  video.srcObject=null; ctx.clearRect(0,0,over.width,over.height);
+  $("#grade").hidden=true; $("#acoes2").style.display="none";
+  $("#acoes").innerHTML='<button class="btn" id="bIniciar">Iniciar câmera</button>';
+  $("#bIniciar").onclick=iniciar;
+  faixa("Câmera parada", E.gab?("Prova "+(E.id||"—")+" · gabarito pronto"):"Nenhuma prova carregada");
+}
+function faixa(t,s,alerta){ $("#ftit").textContent=t; $("#fsub").textContent=s;
+  $("#dot").style.background=alerta?"var(--coral)":(travado?"var(--mint)":"var(--amber)"); }
+
+function laco(){
+  if(!rodando) return;
+  if(video.readyState>=2 && !travado) processar();
+  setTimeout(()=>requestAnimationFrame(laco),70);
+}
+function processar(){
+  const vw=video.videoWidth, vh=video.videoHeight; if(!vw) return;
+  const alvo=Math.min(1100,vw);
+  tmp.width=alvo; tmp.height=Math.round(vh*alvo/vw);
+  tctx.drawImage(video,0,0,tmp.width,tmp.height);
+  analisar(tctx.getImageData(0,0,tmp.width,tmp.height), true);
+}
+function analisar(imgData, aoVivo){
+  const src=cinza(imgData);
+  const quad=fiduciais(reduzir(src,620));
+  ultimoQuad=quad;
+  if(aoVivo) pintar(quad,imgData.width,imgData.height);
+
+  if(!quad){ hist=[]; desenhaGrade(null,false);
+    faixa("Procurando o cartão","Enquadre a moldura tracejada inteira"); return false; }
+
+  if(!alunoQR){                       // cada cartão traz o seu próprio aluno
+    const p=lerQR(src,quad);
+    if(p && aplicarQR(p)) semQR=0; else semQR++;
+  }
+  const L=lerBolhas(src,quad); if(!L) return false;
+  desenhaGrade(L.R,false);
+
+  if(!E.gab){
+    faixa("Cartão localizado","Aproxime para ler o QR — ou digite o gabarito em Prova");
+    return false;
+  }
+  const ch=L.R.join("|"); hist.push(ch); if(hist.length>3) hist.shift();
+  const estavel = hist.length===3 && hist[0]===hist[1] && hist[1]===hist[2];
+  if(estavel && (alunoQR || semQR>36)){ travar(L); return true; }
+  faixa(alunoQR?("Lendo "+primeiroNome(alunoQR.nome)+"…"):"Lendo…",
+        alunoQR?(alunoQR.turma+" · nº "+alunoQR.numero):
+                ("Buscando o QR — "+L.R.filter(Boolean).length+"/10 marcações"));
+  return false;
+}
+/* DBM2|idProva|gabarito|turma|numero|nome   (DBM1 = sem aluno) */
+function aplicarQR(p){
+  const t=String(p).split("|");
+  if((t[0]!=="DBM2"&&t[0]!=="DBM1")||t.length<3) return false;
+  const g=(t[2]||"").toUpperCase();
+  if(!/^[A-E]{10}$/.test(g)) return false;
+  E.id=t[1]||""; E.gab=g; salvar(); refletirProva();
+  if(t[0]==="DBM2" && (t[5]||"").trim()){
+    alunoQR={turma:(t[3]||"").trim(), numero:(t[4]||"").trim(), nome:t[5].trim()};
+  }
+  return true;
+}
+function pintar(quad,w,h){
+  const rect=video.getBoundingClientRect(), dpr=devicePixelRatio||1;
+  over.width=rect.width*dpr; over.height=rect.height*dpr;
+  over.style.width=rect.width+"px"; over.style.height=rect.height+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,rect.width,rect.height);
+  if(!quad) return;
+  const esc=Math.max(rect.width/w,rect.height/h);
+  const ox=(rect.width-w*esc)/2, oy=(rect.height-h*esc)/2;
+  ctx.beginPath();
+  quad.forEach(([x,y],i)=>ctx[i?"lineTo":"moveTo"](x*esc+ox,y*esc+oy));
+  ctx.closePath();
+  ctx.strokeStyle=travado?"#34D399":"#F97316"; ctx.lineWidth=3.5;
+  ctx.setLineDash(travado?[]:[13,9]); ctx.stroke();
+  ctx.setLineDash([]);
+  quad.forEach(([x,y])=>{ ctx.beginPath();
+    ctx.arc(x*esc+ox,y*esc+oy,6,0,6.2832);
+    ctx.fillStyle=travado?"#34D399":"#F97316"; ctx.fill(); });
+}
+function desenhaGrade(R,lk){
+  const g=$("#grade");
+  if(!g.dataset.pronto){
+    let html='<span></span>'+LAY.options.map(o=>`<span class="h">${o}</span>`).join("");
+    for(let q=1;q<=NQ;q++){ html+=`<span class="q">${q}</span>`;
+      for(let k=0;k<NO;k++) html+=`<i data-q="${q}" data-k="${k}"></i>`; }
+    g.innerHTML=html; g.dataset.pronto="1";
+  }
+  g.querySelectorAll("i").forEach(el=>{
+    const q=+el.dataset.q, k=+el.dataset.k;
+    const on=R && R[q-1]===LAY.options[k];
+    el.className=on?(lk?"lk":"on"):"";
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   5. CONFERÊNCIA
+   ═══════════════════════════════════════════════════════════════════ */
+let atual=null;
+function travar(L){
+  travado=true; atual={R:L.R.slice(),mark:L.mark.slice()};
+  desenhaGrade(L.R,true); pintar(ultimoQuad,tmp.width,tmp.height);
+  if(navigator.vibrate) try{navigator.vibrate(55);}catch(e){}
+  montarPainel();
+}
+const primeiroNome=n=>String(n).split(" ").slice(0,2).join(" ");
+function nota(R){ let n=0; for(let i=0;i<NQ;i++) if(R[i] && R[i]===E.gab[i]) n++; return n; }
+function montarPainel(){
+  const n=nota(atual.R);
+  $("#ntv").textContent=n;
+  $("#ntv").style.color = n>=6?"var(--mint)":(n>=4?"var(--amber)":"var(--coral)");
+  $("#ntd").textContent=`de 10  ·  ${(n*10)}%  ·  prova ${E.id||"—"}`;
+  const amb=atual.mark.map((m,i)=>m!=="OK"?i+1:0).filter(Boolean);
+  const av=$("#avAmb");
+  av.hidden=!amb.length;
+  if(amb.length) av.textContent=`Questão ${amb.join(", ")}: sem marcação clara (branco ou dupla). Confira no papel.`;
+
+  $("#conf").innerHTML=atual.R.map((r,i)=>{
+    const cls=r===null?"vz":(r===E.gab[i]?"ok":"no");
+    return `<button class="qc ${cls}" data-i="${i}">
+      <div class="n">${String(i+1).padStart(2,"0")}</div>
+      <div class="a">${r||"—"}</div>
+      <div class="g">gab ${E.gab[i]}</div></button>`;
+  }).join("");
+  $("#conf").querySelectorAll(".qc").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i, ord=[...LAY.options,null];
+    atual.R[i]=ord[(ord.indexOf(atual.R[i])+1)%ord.length]; atual.mark[i]="MANUAL";
+    montarPainel();
+  });
+
+  const sel=$("#selAluno"), cx=$("#boxAluno");
+  if(alunoQR){
+    const rep=E.alunos.findIndex(a=>a.nome===alunoQR.nome && a.turma===alunoQR.turma);
+    cx.innerHTML=`<div class="card" style="margin:0">
+        <h3>${alunoQR.nome}</h3>
+        <p>${alunoQR.turma?alunoQR.turma+" · ":""}${alunoQR.numero?"nº "+alunoQR.numero:""} — identificado pelo QR</p>
+      </div>`+(rep>=0?`<div class="aviso" style="margin-top:9px">Este aluno já foi lido (nota ${E.alunos[rep].nota}). Salvar vai substituir o resultado anterior.</div>`:"");
+    sel.style.display="none"; $("#nomeAluno").style.display="none";
+  } else {
+    cx.innerHTML='<div class="aviso" style="margin:0">QR não lido — escolha o aluno abaixo.</div>';
+    sel.style.display=""; $("#nomeAluno").style.display="";
+    const usados=new Set(E.alunos.map(a=>a.nome));
+    sel.innerHTML='<option value="">— escolher da turma —</option>'+
+      E.turma.map(t=>`<option${usados.has(t)?" disabled":""}>${t}${usados.has(t)?" (já lido)":""}</option>`).join("");
+    $("#nomeAluno").value="";
+  }
+  $("#painel").classList.add("on");
+}
+$("#bDescartar").onclick=()=>fecharPainel();
+$("#bSalvar").onclick=()=>{
+  const reg = alunoQR
+    ? {nome:alunoQR.nome, turma:alunoQR.turma, numero:alunoQR.numero}
+    : {nome:($("#nomeAluno").value.trim()||$("#selAluno").value.replace(" (já lido)","").trim()
+             ||`Aluno ${E.alunos.length+1}`), turma:"", numero:""};
+  const reg2={...reg, R:atual.R.slice(), nota:nota(atual.R), id:E.id, t:Date.now()};
+  const i=E.alunos.findIndex(a=>a.nome===reg.nome && a.turma===reg.turma);
+  if(i>=0) E.alunos[i]=reg2; else E.alunos.push(reg2);
+  salvar(); pintarResultados(); fecharPainel();
+};
+function fecharPainel(){
+  $("#painel").classList.remove("on");
+  atual=null; travado=null; hist=[]; alunoQR=null; semQR=0; desenhaGrade(null,false);
+  faixa("Pronto para o próximo","Prova "+(E.id||"—")+" · "+E.alunos.length+" salvos");
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   6. TELAS PROVA / RESULTADOS
+   ═══════════════════════════════════════════════════════════════════ */
+function refletirProva(){
+  $("#idProva").value=E.id; $("#gabarito").value=E.gab;
+  $("#habs").value=E.habs.join(","); $("#turma").value=E.turma.join("\n");
+}
+$("#idProva").oninput=e=>{E.id=e.target.value.trim();salvar();};
+$("#gabarito").oninput=e=>{
+  const v=e.target.value.toUpperCase().replace(/[^A-E]/g,"").slice(0,10);
+  e.target.value=v; E.gab=v.length===10?v:""; salvar();
+};
+$("#habs").oninput=e=>{E.habs=e.target.value.split(",").map(s=>s.trim()).filter(Boolean);salvar();};
+$("#turma").oninput=e=>{E.turma=e.target.value.split("\n").map(s=>s.trim()).filter(Boolean);salvar();};
+$("#bLimparProva").onclick=()=>{
+  if(!confirm("Limpar código, gabarito e turma? Os resultados já salvos permanecem.")) return;
+  E.id="";E.gab="";E.habs=[];E.turma=[];salvar();refletirProva();
+};
+
+function pintarResultados(){
+  const A=E.alunos, n=A.length;
+  $("#pill").hidden=!n; $("#pill").textContent=n;
+  $("#resAcoes").hidden=!n;
+  if(!n){
+    $("#resSub").textContent="Nenhum cartão lido ainda.";
+    $("#resumo").innerHTML=""; $("#itens").innerHTML=""; $("#habsBox").innerHTML="";
+    $("#lista").innerHTML='<div class="vazio"><b>Sem resultados</b>Leia o primeiro cartão na aba Ler.</div>';
+    return;
+  }
+  const notas=A.map(a=>a.nota), med=notas.reduce((s,x)=>s+x,0)/n;
+  const aprov=notas.filter(x=>x>=6).length;
+  $("#resSub").textContent=`${n} ${n>1?"cartões lidos":"cartão lido"} · prova ${E.id||"—"}`;
+  $("#resumo").innerHTML=`<div class="card" style="display:flex;gap:20px">
+    <div><div class="rot" style="margin:0 0 2px">Média</div>
+      <b class="mono" style="font-size:26px">${med.toFixed(1)}</b></div>
+    <div><div class="rot" style="margin:0 0 2px">≥ 6,0</div>
+      <b class="mono" style="font-size:26px">${aprov}<span style="font-size:13px;color:var(--mute)">/${n}</span></b></div>
+    <div><div class="rot" style="margin:0 0 2px">Menor · maior</div>
+      <b class="mono" style="font-size:26px">${Math.min(...notas)}–${Math.max(...notas)}</b></div></div>`;
+
+  $("#lista").innerHTML='<div class="rot">Alunos</div>'+A.map((a,i)=>
+    `<div class="aluno"><div style="flex:1;min-width:0">
+       <div class="nm">${a.numero?`<span style="color:var(--mute);font-family:var(--mono);font-size:12px">${a.numero} </span>`:""}${a.nome}</div>
+       <div class="rs">${a.turma?a.turma+" · ":""}${a.R.map(r=>r||"·").join(" ")}</div></div>
+     <div class="nt" style="color:${a.nota>=6?"var(--mint)":a.nota>=4?"var(--amber)":"var(--coral)"}">${a.nota}</div>
+     <button class="x" data-d="${i}" aria-label="Remover ${a.nome}">✕</button></div>`).join("");
+  $("#lista").querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{
+    if(confirm("Remover "+A[+b.dataset.d].nome+"?")){E.alunos.splice(+b.dataset.d,1);salvar();pintarResultados();}
+  });
+
+  const pct=[]; for(let q=0;q<NQ;q++){
+    pct.push(100*A.filter(a=>a.R[q]===E.gab[q]).length/n);
+  }
+  $("#itens").innerHTML='<div class="rot">Acerto por questão</div>'+pct.map((p,q)=>
+    `<div class="barra"><span class="q">${String(q+1).padStart(2,"0")}</span>
+      <span class="t"><span class="f ${p<50?"baixo":p<75?"medio":""}" style="width:${p}%"></span></span>
+      <span class="p">${Math.round(p)}%</span></div>`).join("")+
+    (pct.some(p=>p<50)?`<p class="card" style="background:#fb5a5a14;border-color:#fb5a5a3d;color:#FCA5A5;margin-top:9px;font-size:12.5px">
+      Questões abaixo de 50%: ${pct.map((p,q)=>p<50?q+1:0).filter(Boolean).join(", ")}. Vale retomar em sala.</p>`:"");
+
+  if(E.habs.length===NQ){
+    const M={};
+    E.habs.forEach((h,q)=>{ (M[h]=M[h]||[]).push(pct[q]); });
+    $("#habsBox").innerHTML='<div class="rot">Acerto por habilidade</div>'+
+      Object.entries(M).sort((a,b)=>a[0].localeCompare(b[0])).map(([h,v])=>{
+        const p=v.reduce((s,x)=>s+x,0)/v.length;
+        return `<div class="barra"><span class="q" style="width:38px">${h}</span>
+          <span class="t"><span class="f ${p<50?"baixo":p<75?"medio":""}" style="width:${p}%"></span></span>
+          <span class="p">${Math.round(p)}%</span></div>`;}).join("");
+  } else $("#habsBox").innerHTML="";
+}
+$("#bCsv").onclick=()=>{
+  const cab=["turma","numero","aluno","nota","percentual","prova",
+             ...Array.from({length:NQ},(_,i)=>"Q"+(i+1))];
+  const ord=E.alunos.slice().sort((a,b)=>
+    (a.turma||"").localeCompare(b.turma||"") ||
+    (a.numero||"").localeCompare(b.numero||"",undefined,{numeric:true}) ||
+    a.nome.localeCompare(b.nome));
+  const lin=ord.map(a=>[a.turma||"",a.numero||"",`"${a.nome.replace(/"/g,'""')}"`,
+    a.nota,a.nota*10,a.id||"",...a.R.map(r=>r||"")].join(";"));
+  const csv="\uFEFF"+[cab.join(";"),...lin].join("\r\n");
+  const u=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  const a=document.createElement("a");
+  a.href=u; a.download=`notas_${E.id||"prova"}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); setTimeout(()=>URL.revokeObjectURL(u),1500);
+};
+$("#bZerar").onclick=()=>{
+  if(!confirm("Apagar todos os "+E.alunos.length+" resultados? Não dá para desfazer.")) return;
+  E.alunos=[]; salvar(); pintarResultados();
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   7. FOTO DA GALERIA + NAVEGAÇÃO
+   ═══════════════════════════════════════════════════════════════════ */
+$("#bFoto").onclick=()=>$("#arq").click();
+$("#arq").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const im=new Image();
+  im.onload=()=>{
+    const alvo=Math.min(1400,im.width);
+    tmp.width=alvo; tmp.height=Math.round(im.height*alvo/im.width);
+    tctx.drawImage(im,0,0,tmp.width,tmp.height);
+    const d=tctx.getImageData(0,0,tmp.width,tmp.height);
+    const src=cinza(d), quad=fiduciais(reduzir(src,700));
+    if(!quad){ faixa("Cartão não encontrado na foto","Enquadre a moldura inteira, sem cortar os cantos",true); return; }
+    if(!E.gab){ const p=lerQR(src,quad); if(p) aplicarQR(p); }
+    if(!E.gab){ faixa("Gabarito ausente","QR ilegível — digite o gabarito na aba Prova",true); return; }
+    const L=lerBolhas(src,quad); if(!L) return;
+    ultimoQuad=quad; travar(L);
+  };
+  im.src=URL.createObjectURL(f); e.target.value="";
+};
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+b.dataset.v));
+  if(b.dataset.v!=="ler" && rodando) parar();
+});
+$("#bIniciar").onclick=iniciar;
+$("#bParar").onclick=parar;
+
+refletirProva(); pintarResultados();
+faixa("Toque em iniciar câmera", E.gab?("Prova "+(E.id||"—")+" · gabarito pronto"):"O QR do cartão carrega o gabarito");
+</script>
+</body>
+</html>
